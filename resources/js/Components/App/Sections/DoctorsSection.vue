@@ -1,0 +1,621 @@
+<template>
+  <section ref="section" class="pb-16 pt-14 bg-gradient-to-b from-white to-gray-50 overflow-hidden">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Заголовок -->
+      <div class="md:text-center md:ml-0 sm:ml-12 mb-8">
+        <span class="hidden md:block mb-4 w-16 h-1 rounded bg-blue-600 mx-auto"></span>
+        <p class="title-with-underline mt-2 text-2xl sm:text-3xl md:text-2xl lg:text-3xl leading-8 font-bold tracking-tight text-gray-900 relative 
+           before:md:hidden before:content-[''] before:absolute before:left-0 before:bottom-0 sm:before:w-[41%] before:w-[55%] before:h-[40%] before:bg-blue-50 before:rounded-[4px] before:z-0">
+          <span class="relative z-10">Наши специалисты</span>
+        </p>
+        <p class="mt-2 text-lg sm:text-xl md:text-lg lg:text-xl text-gray-600 md:mx-auto">
+          Профессионалы с большим опытом работы
+        </p>
+      </div>
+
+      <div class="relative overflow-hidden h-[320px] md:h-[400px] select-none">
+        <div ref="sliderTrack" class="flex" :style="{ transform: `translateX(${currentOffset}px)` }"
+             @pointerdown="startDrag">
+          <div v-for="(doctor, index) in visibleDoctors" :key="`${currentLoop}-${doctor.id}-${index}`"
+               class="mx-4 px-2 w-[300px] flex-shrink-0">
+            <!-- Карточка врача -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 h-full">
+              <div class="relative mx-auto h-32 w-32 md:h-48 md:w-48 rounded-md overflow-hidden border-4 border-white shadow-lg">
+                <img :src="doctor.image" :alt="doctor.name" width="128" height="128"
+                     class="h-full w-full object-cover" loading="lazy">
+              </div>
+              <h3 class="mt-4 text-lg font-bold text-gray-900">{{ doctor.name }}</h3>
+              <p class="mt-1 text-blue-600">{{ doctor.specialty }}</p>
+              <button v-if="$page.props.auth.user" @click="openModal(doctor)"
+                      class="mt-4 px-4 py-2 bg-blue-600 w-full text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                Записаться
+              </button>
+              <button v-else @click="openModal(doctor)"
+                      class="mt-4 px-4 py-2 bg-blue-600 w-full  text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                Подробнее
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+        <button v-if="currentStep < 4" @click="closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        <!-- Шаг 1: Информация о враче -->
+        <div v-if="currentStep === 1" class="space-y-6">
+          <div class="flex items-start space-x-4">
+            <img :src="selectedDoctor.image" :alt="selectedDoctor.name" 
+                 class="h-20 w-20 rounded-full object-cover border-2 border-blue-100 flex-shrink-0">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900">{{ selectedDoctor.name }}</h3>
+              <p class="text-blue-600 font-medium">{{ selectedDoctor.specialty }}</p>
+              <p class="text-sm text-gray-500 mt-1">Стаж: {{ selectedDoctor.experience }}</p>
+            </div>
+          </div>
+          
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <h4 class="font-bold text-gray-900 mb-2">О специалисте:</h4>
+            <p class="text-gray-700 text-sm">{{ selectedDoctor.description || 'Высококвалифицированный специалист с большим опытом работы. Доктор наук, автор научных публикаций. Внимательный и чуткий подход к каждому пациенту.' }}</p>
+          </div>
+          
+          <div class="space-y-3">
+            <h4 class="font-bold text-gray-900">Образование:</h4>
+            <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+              <li v-for="(edu, idx) in selectedDoctor.education" :key="idx">{{ edu }}</li>
+            </ul>
+          </div>
+          
+          <div class="space-y-3" v-if="selectedDoctor.achievements">
+            <h4 class="font-bold text-gray-900">Достижения:</h4>
+            <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+              <li v-for="(ach, idx) in selectedDoctor.achievements" :key="idx">{{ ach }}</li>
+            </ul>
+          </div>
+          
+          <button v-if="$page.props.auth.user" @click="currentStep = 2" 
+                  class="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium">
+            Выбрать время приема
+          </button>
+          <button v-else
+                  class="w-full mt-6 bg-gray-600 cursor-not-allowed text-white py-3 px-4 rounded-md font-medium">
+            Необходимо авторизоваться
+          </button>
+        </div>
+        
+        <!-- Шаг 2: Выбор даты и времени -->
+        <div v-if="currentStep === 2" class="space-y-6">
+          <h3 class="text-xl font-bold text-gray-900 text-center">Выберите время приема</h3>
+          
+          <div class="flex justify-between items-center mb-4">
+            <button @click="prevWeek" class="p-2 rounded-full hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span class="font-medium text-gray-800">{{ currentWeekRange }}</span>
+            <button @click="nextWeek" class="p-2 rounded-full hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div v-for="day in availableDays" :key="day.date" 
+                 @click="selectDate(day)"
+                 :class="{'border-blue-500 bg-blue-50': selectedDate === day.date, 'border-gray-200': selectedDate !== day.date}"
+                 class="border rounded-lg p-3 text-center cursor-pointer transition-colors">
+              <div class="text-sm font-medium">{{ day.dayName }}</div>
+              <div class="text-lg font-bold mt-1">{{ day.dayNumber }}</div>
+              <div class="text-xs text-gray-500 mt-1">{{ day.month }}</div>
+            </div>
+          </div>
+          
+          <div v-if="selectedDate" class="mt-4">
+            <h4 class="font-medium text-gray-900 mb-3">Доступное время:</h4>
+            <div class="grid grid-cols-3 gap-2">
+              <button v-for="time in availableTimes" :key="time"
+                      @click="selectTime(time)"
+                      :class="{'bg-blue-600 text-white': selectedTime === time, 'bg-gray-100 text-gray-800 hover:bg-gray-200': selectedTime !== time}"
+                      class="py-2 px-3 rounded-md text-sm font-medium transition-colors">
+                {{ time }}
+              </button>
+            </div>
+          </div>
+          
+          <div class="flex justify-between mt-6">
+            <button @click="currentStep = 1" 
+                    class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+              Назад
+            </button>
+            <button @click="currentStep = 3" 
+                    :disabled="!selectedDate || !selectedTime"
+                    :class="{'bg-blue-600 hover:bg-blue-700': selectedDate && selectedTime, 'bg-gray-300 cursor-not-allowed': !selectedDate || !selectedTime}"
+                    class="px-6 py-2 text-white rounded-md font-medium transition-colors">
+              Продолжить
+            </button>
+          </div>
+        </div>
+        
+        <!-- Шаг 3: Подтверждение данных -->
+        <div v-if="currentStep === 3" class="space-y-6">
+          <h3 class="text-xl font-bold text-gray-900 text-center">Подтвердите запись</h3>
+          
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="flex items-start space-x-3">
+              <img :src="selectedDoctor.image" :alt="selectedDoctor.name" 
+                   class="h-12 w-12 rounded-full object-cover border border-gray-200">
+              <div>
+                <h4 class="font-bold text-gray-900">{{ selectedDoctor.name }}</h4>
+                <p class="text-blue-600 text-sm">{{ selectedDoctor.specialty }}</p>
+              </div>
+            </div>
+            
+            <div class="mt-4 space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Дата:</span>
+                <span class="font-medium">{{ formattedSelectedDate }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Время:</span>
+                <span class="font-medium">{{ selectedTime }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Кабинет:</span>
+                <span class="font-medium">{{ selectedDoctor.room || '№204' }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Ваше ФИО*</label>
+              <input v-model="userData.fullName" type="text" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Дата рождения*</label>
+              <input v-model="userData.birthDate" type="date" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Телефон*</label>
+              <input v-model="userData.phone" type="tel" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     placeholder="+7 (___) ___-__-__">
+            </div>
+          </div>
+          
+          <div class="flex justify-between mt-6">
+            <button @click="currentStep = 2" 
+                    class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+              Назад
+            </button>
+            <button @click="submitAppointment" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors">
+              Подтвердить запись
+            </button>
+          </div>
+        </div>
+        
+        <!-- Шаг 4: Успешная запись -->
+        <div v-if="currentStep === 4" class="text-center pt-6 pb-2">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Запись успешно оформлена!</h3>
+          <p class="text-gray-600 mb-6">Детали записи можно посмотреть в личном кабинете</p>
+          
+          <button @click="closeModal" 
+                  class="mt-2 bg-blue-600 text-white py-2.5 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium">
+            Закрыть
+          </button>
+        </div>
+        
+        <!-- Шаг 5: Ошибка записи -->
+        <div v-if="currentStep === 5" class="text-center py-6">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Произошла ошибка</h3>
+          <p class="text-gray-600 mb-6">{{ errorMessage || 'Не удалось оформить запись. Пожалуйста, попробуйте позже.' }}</p>
+          
+          <div class="flex justify-center space-x-4">
+            <button @click="currentStep = 3" 
+                    class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-medium transition-colors">
+              Попробовать снова
+            </button>
+            <button @click="closeModal" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors">
+              Закрыть
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+defineProps({
+    canLogin: Boolean,
+    canRegister: Boolean,
+});
+
+const doctors = [
+  { 
+    id: 1, 
+    name: 'Др. Сергей Петров', 
+    specialty: 'Терапевт', 
+    experience: '21 год', 
+    image: 'https://cdn-icons-png.flaticon.com/512/3282/3282224.png',
+    description: 'Высококвалифицированный терапевт с более чем 20-летним опытом работы. Специализируется на диагностике и лечении широкого спектра заболеваний внутренних органов.',
+    education: [
+      'Московский государственный медицинский университет, 1998',
+      'Ординатура по терапии, 2000'
+    ],
+    achievements: [
+      'Кандидат медицинских наук',
+      'Автор 15 научных публикаций',
+      'Лучший врач года 2015'
+    ],
+    room: '№204',
+    schedule: {
+      days: [1, 3, 4], // Пн, Ср, Чт
+      hours: { start: 12, end: 18 },
+      appointmentDuration: 30
+    }
+  },
+  { 
+    id: 2, 
+    name: 'Др. Анна Иванова', 
+    specialty: 'Кардиолог', 
+    experience: '15 лет', 
+    image: 'https://cdn-icons-png.flaticon.com/512/3282/3282224.png',
+    description: 'Кардиолог высшей категории с большим опытом работы в кардиохирургии. Специализируется на лечении ишемической болезни сердца, аритмий и гипертонии.',
+    education: [
+      'Санкт-Петербургский медицинский университет, 2005',
+      'Ординатура по кардиологии, 2007',
+      'Курс по интервенционной кардиологии, 2010'
+    ],
+    achievements: [
+      'Доктор медицинских наук',
+      'Провела более 1000 успешных операций',
+      'Член Европейского общества кардиологов'
+    ],
+    room: '№312',
+    schedule: {
+      days: [2, 4, 5], // Вт, Чт, Пт
+      hours: { start: 9, end: 15 },
+      appointmentDuration: 30
+    }
+  },
+  // Остальные врачи...
+];
+
+// Константы
+const CARD_WIDTH = 324;
+const SCROLL_SPEED = 0.8;
+const BUFFER_CARDS = 2;
+
+// Состояние слайдера
+const section = ref(null);
+const sliderTrack = ref(null);
+const scrollPosition = ref(0);
+const isDragging = ref(false);
+const dragStartX = ref(0);
+const dragStartPosition = ref(0);
+const animationId = ref(null);
+const currentLoop = ref(0);
+const isVisible = ref(false);
+
+// Состояние модального окна
+const showModal = ref(false);
+const selectedDoctor = ref(null);
+const currentStep = ref(1);
+const selectedDate = ref(null);
+const selectedTime = ref(null);
+const currentWeekStart = ref(new Date());
+const userData = ref({
+  fullName: '',
+  birthDate: '',
+  phone: ''
+});
+const errorMessage = ref('');
+const appointmentSubmitted = ref(false);
+
+// Открытие модального окна
+const openModal = (doctor) => {
+  selectedDoctor.value = doctor;
+  showModal.value = true;
+  currentStep.value = 1;
+  selectedDate.value = null;
+  selectedTime.value = null;
+  userData.value = { fullName: '', birthDate: '', phone: '' };
+  errorMessage.value = '';
+  appointmentSubmitted.value = false;
+  
+  // Установим начало текущей недели
+  const today = new Date();
+  const dayOfWeek = today.getDay() || 7; // Воскресенье будет 7
+  currentWeekStart.value = new Date(today.setDate(today.getDate() - dayOfWeek + 1));
+  
+  // Остановить анимацию слайдера при открытии модалки
+  cancelAnimationFrame(animationId.value);
+};
+
+// Закрытие модального окна
+const closeModal = () => {
+  showModal.value = false;
+  // Возобновить анимацию слайдера
+  if (isVisible.value) {
+    animationId.value = requestAnimationFrame(animate);
+  }
+};
+
+// Навигация по неделям
+const prevWeek = () => {
+  const date = new Date(currentWeekStart.value);
+  date.setDate(date.getDate() - 7);
+  currentWeekStart.value = date;
+};
+
+const nextWeek = () => {
+  const date = new Date(currentWeekStart.value);
+  date.setDate(date.getDate() + 7);
+  currentWeekStart.value = date;
+};
+
+// Форматирование даты
+const formatDate = (date) => {
+  const options = { weekday: 'short', day: 'numeric', month: 'short' };
+  return date.toLocaleDateString('ru-RU', options);
+};
+
+// Доступные дни для записи
+const availableDays = computed(() => {
+  if (!selectedDoctor.value) return [];
+  
+  const days = [];
+  const doctorDays = selectedDoctor.value.schedule.days;
+  const startHour = selectedDoctor.value.schedule.hours.start;
+  const endHour = selectedDoctor.value.schedule.hours.end;
+  
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(currentWeekStart.value);
+    date.setDate(date.getDate() + i);
+    
+    const dayOfWeek = date.getDay() || 7; // Воскресенье будет 7
+    const isAvailable = doctorDays.includes(dayOfWeek - 1); // Приводим к 0-6
+    
+    if (isAvailable) {
+      days.push({
+        date: date.toISOString().split('T')[0],
+        dayName: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][dayOfWeek - 1],
+        dayNumber: date.getDate(),
+        month: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][date.getMonth()],
+        isAvailable: true
+      });
+    }
+  }
+  
+  return days;
+});
+
+// Доступное время для выбранной даты
+const availableTimes = computed(() => {
+  if (!selectedDate.value || !selectedDoctor.value) return [];
+  
+  const times = [];
+  const duration = selectedDoctor.value.schedule.appointmentDuration;
+  const startHour = selectedDoctor.value.schedule.hours.start;
+  const endHour = selectedDoctor.value.schedule.hours.end;
+  
+  let currentTime = startHour * 60; // в минутах
+  
+  while (currentTime + duration <= endHour * 60) {
+    const hours = Math.floor(currentTime / 60);
+    const minutes = currentTime % 60;
+    times.push(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+    currentTime += duration;
+  }
+  
+  return times;
+});
+
+// Выбор даты
+const selectDate = (day) => {
+  selectedDate.value = day.date;
+  selectedTime.value = null;
+};
+
+// Выбор времени
+const selectTime = (time) => {
+  selectedTime.value = time;
+};
+
+// Форматированная выбранная дата
+const formattedSelectedDate = computed(() => {
+  if (!selectedDate.value) return '';
+  const date = new Date(selectedDate.value);
+  return formatDate(date);
+});
+
+// Диапазон текущей недели
+const currentWeekRange = computed(() => {
+  const start = new Date(currentWeekStart.value);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  
+  return `${formatDate(start)} - ${formatDate(end)}`;
+});
+
+// Отправка формы записи
+const submitAppointment = () => {
+  console.log('Запись отправлена:', {
+    doctor: selectedDoctor.value.name,
+    date: selectedDate.value,
+    time: selectedTime.value,
+    userData: userData.value
+  });
+  
+  // Имитация ответа сервера
+  const isSuccess = Math.random() > 0.2; 
+  
+  if (isSuccess) {
+    appointmentSubmitted.value = true;
+    currentStep.value = 4;
+  } else {
+    errorMessage.value = 'Время уже занято. Пожалуйста, выберите другое время.';
+    currentStep.value = 5;
+  }
+};
+
+// Вычисляемые свойства
+const totalWidth = computed(() => doctors.length * CARD_WIDTH);
+const currentOffset = computed(() => scrollPosition.value % totalWidth.value);
+
+const visibleDoctors = computed(() => {
+  const startIndex = Math.floor(Math.abs(scrollPosition.value) / CARD_WIDTH) % doctors.length;
+  const visibleCount = Math.ceil(window.innerWidth / CARD_WIDTH) + BUFFER_CARDS;
+
+  const result = [];
+  for (let i = 0; i < visibleCount; i++) {
+    const index = (startIndex + i) % doctors.length;
+    result.push(doctors[index]);
+  }
+  return result;
+});
+
+// Анимация
+const animate = () => {
+  if (!isDragging.value && isVisible.value) {
+    scrollPosition.value -= SCROLL_SPEED;
+    currentLoop.value = Math.floor(scrollPosition.value / totalWidth.value);
+  }
+  animationId.value = requestAnimationFrame(animate);
+};
+
+// Обработчики свайпа
+const startDrag = (e) => {
+  isDragging.value = true;
+  dragStartX.value = e.clientX;
+  dragStartPosition.value = scrollPosition.value;
+  sliderTrack.value.style.transition = 'none';
+  document.addEventListener('pointermove', handleDrag);
+  document.addEventListener('pointerup', endDrag);
+};
+
+const handleDrag = (e) => {
+  if (!isDragging.value) return;
+  scrollPosition.value = dragStartPosition.value + (e.clientX - dragStartX.value);
+};
+
+const endDrag = () => {
+  if (!isDragging.value) return;
+  isDragging.value = false;
+  sliderTrack.value.style.transition = 'transform 0.4s ease-out';
+  document.removeEventListener('pointermove', handleDrag);
+  document.removeEventListener('pointerup', endDrag);
+};
+
+// Активация при видимости
+const observer = new IntersectionObserver((entries) => {
+  isVisible.value = entries[0].isIntersecting;
+  if (isVisible.value && !showModal.value) {
+    animationId.value = requestAnimationFrame(animate);
+  } else {
+    cancelAnimationFrame(animationId.value);
+  }
+}, { threshold: 0.5 });
+
+onMounted(() => {
+  observer.observe(section.value);
+});
+
+onUnmounted(() => {
+  observer.disconnect();
+  cancelAnimationFrame(animationId.value);
+  document.removeEventListener('pointermove', handleDrag);
+  document.removeEventListener('pointerup', endDrag);
+});
+</script>
+
+<style scoped>
+.slider-track {
+    will-change: transform;
+    transition: transform 0.4s ease-out;
+    display: flex;
+}
+
+.doctor-card {
+    flex: 0 0 300px;
+    padding: 0 12px;
+    contain: strict;
+    backface-visibility: hidden;
+}
+
+@media (max-width: 640px) {
+    .doctor-card {
+        flex-basis: 280px;
+        padding: 0 8px;
+    }
+}
+
+@media (min-width: 480px) and (max-width: 510px) {
+  .title-with-underline::before {
+    width: 52%;
+  }
+}
+
+@media (min-width: 510px) and (max-width: 542px) {
+  .title-with-underline::before {
+    width: 48%;
+  }
+}
+
+@media (min-width: 542px) and (max-width: 592px) {
+  .title-with-underline::before {
+    width: 45%;
+  }
+}
+
+@media (min-width: 592px) and (max-width: 640px) {
+  .title-with-underline::before {
+    width: 40%;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 687px) {
+  .title-with-underline::before {
+    width: 48%;
+  }
+}
+
+@media (min-width: 687px) and (max-width: 740px) {
+  .title-with-underline::before {
+    width: 44%;
+  }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>

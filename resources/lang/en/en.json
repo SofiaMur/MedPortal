@@ -1,0 +1,90 @@
+{
+    "app": {
+      "title": "Medical portal"
+    },
+    "navigation": {
+      "home": "Home",
+      "services": "Services",
+      "doctors": "Doctors",
+      "promotions": "Promotions",
+      "contacts": "Contacts",
+      "schedule": "Schedule",
+      "login": "Login",
+      "register": "Register",
+      "dashboard": "Profile",
+      "search": "Search"
+    },
+    "header": {
+      "vision_version": "Vision impaired version",
+      "dark_theme": "Dark mode",
+      "light_theme": "Light mode",
+      "address": "Veliky Novgorod, Medical st. 15",
+      "working_hours": "Mon-Fri: 8:00-20:00",
+      "phone": "+7 (908) 123-45-67"
+    },
+    "main": {
+      "hero_title": "Digital solutions for your health",
+      "hero_subtitle": "Online doctor appointments, electronic patient records and telemedicine consultations in one app",
+      "features_title": "Everything for your comfort",
+      "feature_online": "Online appointment",
+      "feature_online_desc": "Book doctors anytime without queues and calls",
+      "feature_records": "Electronic records",
+      "feature_records_desc": "All your medical data in one place with secure access",
+      "feature_telemed": "Teleconsultations",
+      "feature_telemed_desc": "Get doctor consultations online without visiting the clinic",
+      "doctors_title": "Professionals with extensive experience",
+      "appointment_title": "Make an appointment",
+      "appointment_subtitle": "Choose a convenient time",
+      "specialist": "Specialist",
+      "date": "Date",
+      "time": "Time",
+      "reason": "Reason for visit",
+      "book_button": "Book an appointment",
+      "ready_title": "Ready to start?",
+      "register_now": "Register now",
+      "register_subtitle": "Get access to all features of our medical portal",
+      "free_register": "Free registration"
+    },
+    "map": {
+      "title": "We are located in the city center",
+      "subtitle": "Convenient location with parking and good transport links",
+      "clinic_name": "Medical Center \"MedPortal\"",
+      "branch": "Central branch",
+      "route": "Route"
+    },
+    "reviews": {
+      "title": "What they say about us"
+    },
+    "services": {
+      "title": "Modern solutions for your health",
+      "subtitle": "Online doctor appointments, electronic patient records and telemedicine consultations in one app",
+      "online_title": "Online appointment",
+      "online_desc": "Book doctors anytime without queues and calls. Choose convenient time and specialist.",
+      "records_title": "Electronic records",
+      "records_desc": "All your medical data in one place with secure access. Visit history, tests and prescriptions.",
+      "telemed_title": "Teleconsultations",
+      "telemed_desc": "Get doctor consultations online without visiting the clinic. Fast, convenient and safe.",
+      "details": "Details"
+    },
+    "promo": {
+      "title": "Special offers for you",
+      "promo1_title": "Therapist consultation with 20% discount",
+      "promo1_desc": "Only this month - special offer for our regular customers",
+      "promo2_title": "New service - online consultations",
+      "promo2_desc": "Now you can get a doctor's consultation without leaving home",
+      "promo3_title": "Medical records update",
+      "promo3_desc": "Now all your medical data is available in one place",
+      "details_button": "Details"
+    },
+    "footer": {
+      "description": "We offer a comprehensive approach to medical care using modern technologies and individual approach to each patient.",
+      "contacts": "Contacts",
+      "subscribe": "Subscribe",
+      "subscribe_text": "Get useful articles and personal offers",
+      "privacy_text": "By subscribing, you agree to our",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "sitemap": "Site Map",
+      "email_placeholder": "Your email"
+    }
+  }
